@@ -24,6 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	html := string(bhtml)
 
 	mux := func(ctx *fasthttp.RequestCtx) {
 		split := strings.Split(string(ctx.Path()), "/")
@@ -31,32 +32,24 @@ func main() {
 		var page string
 		var user string
 		var ns string
-		switch len(split) {
-		case 3:
-			user = split[1]
-			ns = split[2]
-		case 4:
+
+		if len(split) > 3 {
 			user = split[1]
 			ns = split[2]
 			page = split[3]
-		default:
-			ctx.Redirect("https://tiddly.alhur.es/", 302)
-			return
+
+			defaultTiddlers, err := getDefaultTiddlers(user, ns)
+			if err != nil {
+				ctx.Error(err.Error(), 400)
+				return
+			}
+
+			if page != "" {
+				defaultTiddlers = page + " " + defaultTiddlers
+			}
+
+			html = setDefaultTiddlers(html, defaultTiddlers)
 		}
-
-		html := string(bhtml)
-
-		defaultTiddlers, err := getDefaultTiddlers(user, ns)
-		if err != nil {
-			ctx.Error(err.Error(), 400)
-			return
-		}
-
-		if page != "" {
-			defaultTiddlers = page + " " + defaultTiddlers
-		}
-
-		html = setDefaultTiddlers(html, defaultTiddlers)
 
 		ctx.SetContentType("text/html")
 		ctx.SetBody([]byte(html))
