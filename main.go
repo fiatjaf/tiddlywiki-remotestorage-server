@@ -29,7 +29,6 @@ func main() {
 	mux := func(ctx *fasthttp.RequestCtx) {
 		split := strings.Split(string(ctx.Path()), "/")
 
-		var page string
 		var user string
 		var ns string
 		var body = html
@@ -38,18 +37,10 @@ func main() {
 			user = split[1]
 			ns = split[2]
 
-			if len(split) > 3 {
-				page = split[3]
-			}
-
 			defaultTiddlers, err := getDefaultTiddlers(user, ns)
 			if err != nil {
 				ctx.Error(err.Error(), 400)
 				return
-			}
-
-			if page != "" {
-				defaultTiddlers = page + " " + defaultTiddlers
 			}
 
 			body = strings.Replace(body, `GettingStarted\n`, defaultTiddlers, 1)
