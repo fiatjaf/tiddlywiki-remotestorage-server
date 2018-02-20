@@ -32,11 +32,15 @@ func main() {
 		var page string
 		var user string
 		var ns string
+		var body = html
 
-		if len(split) > 3 {
+		if len(split) > 2 {
 			user = split[1]
 			ns = split[2]
-			page = split[3]
+
+			if len(split) > 3 {
+				page = split[3]
+			}
 
 			defaultTiddlers, err := getDefaultTiddlers(user, ns)
 			if err != nil {
@@ -48,12 +52,13 @@ func main() {
 				defaultTiddlers = page + " " + defaultTiddlers
 			}
 
-			html = setDefaultTiddlers(html, defaultTiddlers)
+			body = strings.Replace(body, `GettingStarted\n`, defaultTiddlers, 1)
+			body = addTiddler(body, "$:/plugins/fiatjaf/remoteStorage/readonly", "yes")
+			body = addTiddler(body, "$:/plugins/fiatjaf/remoteStorage/userAddress", user)
 		}
 
 		ctx.SetContentType("text/html")
-		ctx.SetBody([]byte(html))
-
+		ctx.SetBody([]byte(body))
 	}
 
 	log.Print("listening...")
@@ -87,17 +92,17 @@ func getDefaultTiddlers(user string, ns string) (string, error) {
 				return "", errors.Wrap(err, "failed to parse $:/DefaultTiddlers JSON.")
 			}
 
-			return tid.Text, nil
+			return strings.Join(BLANK.Split(tid.Text, -1), " "), nil
 		}
 	}
 
 	return "", errors.New("No remoteStorage support on " + user)
 }
 
-func setDefaultTiddlers(html string, names string) string {
+func addTiddler(html, key, value string) string {
 	tiddler := `
-    <div author="tiddly.alhur.es" title="$:/DefaultTiddlers" type="text/vnd.tiddlywiki">
-      <pre>` + names + `</pre>
+    <div author="tiddly.alhur.es" title="` + key + `" type="text/vnd.tiddlywiki">
+      <pre>` + value + `</pre>
     </div>
 	`
 
@@ -106,3 +111,4 @@ func setDefaultTiddlers(html string, names string) string {
 }
 
 var STOREAREAINIT = regexp.MustCompile(`id=['"]storeArea['"][^>]+>`)
+var BLANK = regexp.MustCompile("[\n\r \t]+")
