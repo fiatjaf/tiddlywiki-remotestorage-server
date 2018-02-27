@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -27,15 +28,45 @@ func main() {
 	html := string(bhtml)
 
 	mux := func(ctx *fasthttp.RequestCtx) {
-		split := strings.Split(string(ctx.Path()), "/")
-
 		var user string
 		var ns string
 		var body = html
+		var hostname = strings.Split(string(ctx.Host()), ":")[0]
 
-		if len(split) > 2 {
-			user = split[1]
-			ns = split[2]
+		if hostname == os.Getenv("HOSTNAME") {
+			// normal,
+			//   someone has come to https://HOSTNAME/ or https://HOSTNAME/me@5apps.com/main
+			split := strings.Split(string(ctx.Path()), "/")
+
+			if len(split) > 2 {
+				user = split[1]
+				ns = split[2]
+			}
+		} else {
+			// DNS-attributes mode,
+			//   someone has come to https://THEIRDOMAIN/ after putting a TXT record
+			//   on _tiddlywiki.THEIRDOMAIN with the value
+			//   "<remoteStorage user>/<remoteStorage bucket>"
+			txt, err := net.LookupTXT("_tiddlywiki." + hostname)
+			if err != nil {
+				ctx.SetContentType("text/plain")
+				ctx.SetBody([]byte("You're trying to browse a TiddlyWiki whose tiddlers are on remoteStorage, but we don't know the remoteStorage address nor the bucket under /tiddlers where these tiddlers are. Please add a TXT record on _tiddlywiki." + hostname + " with that data in the format `<remoteStorage address>/<bucket name>`."))
+				return
+			}
+
+			for _, record := range txt {
+				split := strings.Split(record, "/")
+				if len(split) == 2 {
+					user = split[0]
+					ns = split[1]
+					break
+				}
+			}
+		}
+
+		if user != "" {
+			// readonly mode:
+			//   someone is browsing the site with no access to the remoteStorage.
 
 			if ns == "" {
 				ns = "main"
@@ -60,6 +91,10 @@ func main() {
 	if err != nil {
 		log.Print(err)
 	}
+}
+
+func getNS() {
+
 }
 
 func getDefaultTiddlers(user string, ns string) (string, error) {
