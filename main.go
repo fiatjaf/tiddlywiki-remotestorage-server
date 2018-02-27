@@ -37,12 +37,17 @@ func main() {
 			user = split[1]
 			ns = split[2]
 
+			if ns == "" {
+				ns = "main"
+			}
+
 			defaultTiddlers, err := getDefaultTiddlers(user, ns)
 			if err == nil {
 				body = strings.Replace(body, `GettingStarted\n`, defaultTiddlers, 1)
 			}
 
 			body = addTiddler(body, "$:/plugins/fiatjaf/remoteStorage/readonly", "yes")
+			body = addTiddler(body, "$:/plugins/fiatjaf/remoteStorage/namespace", ns)
 			body = addTiddler(body, "$:/plugins/fiatjaf/remoteStorage/userAddress", user)
 		}
 
