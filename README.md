@@ -1,3 +1,7 @@
+**DISABLED:** Now https://tiddly.alhur.es/ is just a static TiddlyWiki that talks to remoteStorage and you can use privately, not a way to publish tiddlywikis to the world anymore.
+
+---
+
 Visit https://tiddly.alhur.es/ to create and edit your remoteStorage-based TiddlyWiki.
 Visit `https://tiddly.alhur.es/<remoteStorage address>/<bucket>/` to browse your TiddlyWiki in readonly-public mode (`<bucket>` defaults to `"main"`).
 
